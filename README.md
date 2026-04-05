@@ -1,5 +1,7 @@
 ### Project structure
 
+```
+```
 cloud-platform-project
 │
 ├── app/
@@ -17,4 +19,6 @@ cloud-platform-project
 ├── infra/
 │   └── terraform/ (optional)
 │
-└── README.mdv
+└── README.md
+```
+```
