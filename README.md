@@ -4,7 +4,7 @@
 cloud-platform-project
 │
 ├── app/
-│   └── flask_app.py
+│   └── api.py
 │
 ├── docker/
 │   └── Dockerfile
