@@ -23,7 +23,7 @@ class Metrics(BaseModel):
     free_ram_percent: float
     disk_free_gb: float
     cpu_count: int
-    total_ram: int
+    total_ram_gb: float
     load_average: list[float]
     network_io_sent_mb: float
     network_io_recv_mb: float
@@ -46,7 +46,7 @@ def _collect_metrics() -> Metrics:
         free_ram_percent=round(ram.available * 100 / ram.total, 2),
         disk_free_gb=round(disk.free / BYTES_PER_GB, 2),
         cpu_count=psutil.cpu_count(),
-        total_ram=psutil.virtual_memory().total / (1024 ** 3),
+        total_ram_gb=round(psutil.virtual_memory().total / BYTES_PER_GB, 2),
         load_average=[round(avg, 2) for avg in load_average],
         network_io_sent_mb=round(net.bytes_sent / (1024 ** 2), 2),
         network_io_recv_mb=round(net.bytes_recv / (1024 ** 2), 2),
