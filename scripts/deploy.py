@@ -11,7 +11,8 @@ def get_container_runtime() -> str | None:
     logger.error("Neither docker nor podman found. Install one of them.")
     return None
 
-
+def build_image(tag: str, docker_file_path: str) -> None:
+    pass
 
 def find_image(image_name: str) -> bool: 
     runtime = get_container_runtime()
@@ -32,6 +33,7 @@ def save_image(image_name: str) -> None:
             subprocess.run([runtime, 'save', '-o', f'{image_name}.tar', image_name], check=True)
         except Exception as e:
             logger.error(f"Error encountered: {e}")
+
 
 
 
