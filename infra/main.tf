@@ -1,5 +1,5 @@
 provider "aws" {
-    region = "us-east-1"
+    region = "eusc-de-east-1"
 }
 
 resource "aws_ecr_repository" "my_ecr_repo"{
@@ -25,5 +25,5 @@ resource "aws_iam_role" "ecs_task_execution" {
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   role       = aws_iam_role.ecs_task_execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  policy_arn = "arn:aws-eusc:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
