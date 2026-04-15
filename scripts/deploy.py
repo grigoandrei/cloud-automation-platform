@@ -72,7 +72,31 @@ def save(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
 ):
     """Save a container image to a .tar file."""
-    pass
+    runtime = get_container_runtime()
+    if not runtime:
+        return
+
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
+
+    full_name = find_image(image_name, runtime)
+    if not full_name:
+        logger.error("Image does not exist!")
+        return
+
+    if dry_run:
+        typer.echo(f"[dry-run] would run: {runtime} save -o {image_name}.tar {full_name}")
+        return
+
+    typer.echo(f"Saving {full_name}...")
+    result = subprocess.run(
+        [runtime, 'save', '-o', f'{image_name}.tar', full_name],
+    )
+    if result.returncode != 0:
+        typer.echo("Save failed.", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"Saved to {image_name}.tar")
+
 
 
 @app.command()
