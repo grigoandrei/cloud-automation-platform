@@ -3,6 +3,7 @@ import shutil
 import logging
 from pathlib import Path
 import typer
+import boto3
 
 app = typer.Typer(help="Deploy CLI for cloud-automation-platform")
 logger = logging.getLogger(__name__)
@@ -71,10 +72,9 @@ def save(
     dry_run: bool = typer.Option(False, "--dry-run", help="Show command without executing"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
 ):
-    """Save a container image to a .tar file."""
     runtime = get_container_runtime()
     if not runtime:
-        return
+        raise typer.Exit(1)
 
     if verbose:
         logging.basicConfig(level=logging.DEBUG)
@@ -82,7 +82,7 @@ def save(
     full_name = find_image(image_name, runtime)
     if not full_name:
         logger.error("Image does not exist!")
-        return
+        raise typer.Exit(1)
 
     if dry_run:
         typer.echo(f"[dry-run] would run: {runtime} save -o {image_name}.tar {full_name}")
@@ -107,9 +107,29 @@ def push(
     region: str = typer.Option("eusc-de-east-1", help="AWS region"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show command without executing"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
+    accountId: str = typer.Option("--accountId", help="Your AWS account Id")
 ):
-    """Push a container image to ECR."""
-    pass
+    # Before starting checks
+    if not shutil.which("aws"):
+        logger.error("AWS CLI is not installed. Please install AWS CLI.")
+        raise typer.Exit(1)
+    
+    runtime = get_container_runtime()
+    if not runtime:
+        raise typer.Exit(1)
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    
+    full_name = find_image(image_name, runtime)
+    if not full_name:
+        logger.error("Image does not exist!")
+        raise typer.Exit(1)
+    if dry_run:
+        typer.echo(f"[dry-run] would run: aws ecr get-login-password --region {region} | podman login --username AWS --password-stdin {accountId}.dkr.ecr.eusc-de-east-1.amazonaws.eu")
+        typer.echo(f"[dry-run] {runtime} tag {full_name} {accountId}.dkr.ecr.eusc-de-east-1.amazonaws.eu")
+        typer.echo(f"[dry-run] {runtime} push {accountId}.dkr.ecr.eusc-de-east-1.amazonaws.eu/{ecr_repo}:{tag}")
+        return
+    
 
 
 @app.command()
