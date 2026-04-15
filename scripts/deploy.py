@@ -1,7 +1,7 @@
 import subprocess
 import shutil
 import logging
-
+from pathlib import Path
 import typer
 
 app = typer.Typer(help="Deploy CLI for cloud-automation-platform")
@@ -34,9 +34,35 @@ def build(
     dockerfile: str = typer.Option("docker/Dockerfile", help="Path to Dockerfile"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show command without executing"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
+    path_to_save: str = typer.Option(".", help="Path for where to save the image, defaults to the current directory")
 ):
     """Build a container image."""
-    pass
+    path = Path(dockerfile)
+    runtime = get_container_runtime()
+    if not runtime:
+        return
+    
+    if not path.exists():
+        logger.error("Docker file not found! Please specify the path to the Dockerfile")
+        return
+    
+    logger.info("Docker file found...")
+
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
+
+    if dry_run:
+        typer.echo(f"[dry-run] would run: {runtime} build -f {path} -t {image_name}:{tag} {path_to_save}")
+        return
+
+    typer.echo(f"Building {image_name}:{tag}...")
+    result = subprocess.run(
+        [runtime, 'build', '-f', str(path), '-t', f'{image_name}:{tag}', path_to_save],
+    )
+    if result.returncode != 0:
+        typer.echo("Build failed.", err=True)
+        raise typer.Exit(1)
+    typer.echo("Build complete.")
 
 
 @app.command()
