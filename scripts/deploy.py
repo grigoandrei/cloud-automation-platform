@@ -3,7 +3,6 @@ import shutil
 import logging
 from pathlib import Path
 import typer
-import boto3
 
 app = typer.Typer(help="Deploy CLI for cloud-automation-platform")
 logger = logging.getLogger(__name__)
@@ -107,7 +106,7 @@ def push(
     region: str = typer.Option("eusc-de-east-1", help="AWS region"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show command without executing"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
-    accountId: str = typer.Option("--accountId", help="Your AWS account Id")
+    accountId: str = typer.Option(None, help="Your AWS account ID (auto-detected if not provided)")
 ):
     # Before starting checks
     if not shutil.which("aws"):
@@ -124,11 +123,54 @@ def push(
     if not full_name:
         logger.error("Image does not exist!")
         raise typer.Exit(1)
+
+    # Auto-detect account ID if not provided
+    if not accountId:
+        result = subprocess.run(
+            ['aws', 'sts', 'get-caller-identity', '--query', 'Account', '--output', 'text'],
+            capture_output=True, text=True,
+        )
+        accountId = result.stdout.strip()
+        if not accountId:
+            typer.echo("Failed to get AWS account ID. Pass --account-id or check credentials.", err=True)
+            raise typer.Exit(1)
+
+    ecr_domain = f"{accountId}.dkr.ecr.{region}.amazonaws.eu"
+    full_tag = f"{ecr_domain}/{ecr_repo}:{tag}"
+
     if dry_run:
-        typer.echo(f"[dry-run] would run: aws ecr get-login-password --region {region} | podman login --username AWS --password-stdin {accountId}.dkr.ecr.eusc-de-east-1.amazonaws.eu")
-        typer.echo(f"[dry-run] {runtime} tag {full_name} {accountId}.dkr.ecr.eusc-de-east-1.amazonaws.eu")
-        typer.echo(f"[dry-run] {runtime} push {accountId}.dkr.ecr.eusc-de-east-1.amazonaws.eu/{ecr_repo}:{tag}")
+        typer.echo(f"[dry-run] aws ecr get-login-password --region {region} | {runtime} login --username AWS --password-stdin {ecr_domain}")
+        typer.echo(f"[dry-run] {runtime} tag {full_name} {full_tag}")
+        typer.echo(f"[dry-run] {runtime} push {full_tag}")
         return
+
+    # Login
+    typer.echo("Logging in to ECR...")
+    login = subprocess.run(
+        f"aws ecr get-login-password --region {region} | {runtime} login --username AWS --password-stdin {ecr_domain}",
+        shell=True,
+    )
+    if login.returncode != 0:
+        typer.echo("ECR login failed.", err=True)
+        raise typer.Exit(1)
+
+    # Tag
+    typer.echo(f"Tagging {full_name} as {full_tag}...")
+    tagging = subprocess.run([runtime, 'tag', full_name, full_tag])
+    if tagging.returncode != 0:
+        typer.echo("Tagging failed.", err=True)
+        raise typer.Exit(1)
+
+    # Push
+    typer.echo("Pushing...")
+    push_result = subprocess.run([runtime, 'push', full_tag])
+    if push_result.returncode != 0:
+        typer.echo("Push failed.", err=True)
+        raise typer.Exit(1)
+    
+    typer.echo("Push complete.")
+
+    
     
 
 
