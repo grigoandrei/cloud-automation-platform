@@ -184,8 +184,9 @@ def deploy(
     dry_run: bool = typer.Option(False, "--dry-run", help="Show command without executing"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
 ):
-    """Full pipeline: build, tag, and push to ECR."""
-    pass
+
+    build(image_name=image_name, tag=tag, dockerfile=dockerfile, dry_run=dry_run, verbose=verbose)
+    push(image_name=image_name, tag=tag, ecr_repo=ecr_repo, region=region, dry_run=dry_run, verbose=verbose)
 
 
 if __name__ == "__main__":
