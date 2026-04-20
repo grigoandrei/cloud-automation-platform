@@ -79,3 +79,22 @@ resource "aws_security_group" "ecs_security_group" {
   }
   
 }
+
+resource "aws_security_group" "vpc_endpoints_security_group" {
+  name = "vpc-endpoints-sg"
+  description = "Security group for VPC Endpoints"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    description = "HTTPS"
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    security_groups = [aws_security_group.ecs_security_group.id]
+  }
+
+  tags = {
+    Name = "vpc-endpoints-sg"
+  }
+  
+}
