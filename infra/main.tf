@@ -98,3 +98,12 @@ resource "aws_security_group" "vpc_endpoints_security_group" {
   }
   
 }
+
+resource "aws_ecs_cluster" "main" {
+  name = "cloud-automation-cluster" 
+}
+
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/ecs/cloud-automation-platform"
+  retention_in_days = 7
+}
