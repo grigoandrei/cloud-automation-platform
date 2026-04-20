@@ -27,3 +27,55 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   role       = aws_iam_role.ecs_task_execution.name
   policy_arn = "arn:aws-eusc:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
+
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "Project VPC"
+  }  
+}
+
+variable "private_subnet_cidrs" {
+  type = list(string)
+  description = "Private Subnet CIDR Values"
+  default     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+}
+
+resource "aws_subnet" "private_subnets" {
+  count = length(var.private_subnet_cidrs)
+  vpc_id = aws_vpc.main.id
+  cidr_block = element(var.private_subnet_cidrs, count.index)
+
+  tags = {
+   Name = "Private Subnet ${count.index + 1}"
+ }
+  
+}
+
+resource "aws_security_group" "ecs_security_group" {
+  name = "ecs-sg"
+  description = "Security group for ECS tasks"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
+  }
+
+  egress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
+  }
+
+  tags = {
+    Name = "ecs-sg"
+  }
+  
+}
