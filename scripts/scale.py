@@ -29,4 +29,25 @@ def get_cpu_utilization(cluster: str, service: str) -> float | None:
     latest = max(datapoints, key=lambda d: d["Timestamp"])
     return latest["Average"]
 
+def get_memory_utilization(cluster: str, service: str) -> float | None:
+    response = cloudwatch.get_metric_statistics(
+        Namespace = "AWS/ECS",
+        Dimensions=[
+            {"Name": "ClusterName", "Value": cluster},
+            {"Name": "ServiceName", "Value": service},
+        ],
+        MetricName="MemoryUtilization",
+        StartTime=datetime.utcnow() - timedelta(minutes=5),
+        EndTime=datetime.utcnow(),
+        Period=60,
+        Statistics=["Average"],
+        Unit="Percent",
+    )
+    datapoints = response.get("Datapoints", [])
+    if not datapoints:
+        return None
+    # Get the most recent datapoint
+    latest = max(datapoints, key=lambda d: d["Timestamp"])
+    return latest["Average"]
+
 
