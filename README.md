@@ -7,6 +7,7 @@ A lightweight cloud automation toolkit for deploying and managing containerized 
 - **FastAPI metrics API** — exposes health checks and system metrics (CPU, RAM, disk, load average, network I/O)
 - **Deploy CLI** — builds, saves, and pushes container images to AWS ECR using Podman or Docker
 - **Scaling script** — monitors ECS tasks via CloudWatch metrics and scales based on CPU/memory utilization
+- **Health checks** — validates API endpoints, ECS task status, and CloudWatch metrics
 - **Infrastructure as Code** — Terraform config for ECR, ECS Fargate, VPC, subnets, and security groups
 
 ## Project structure
@@ -20,6 +21,7 @@ cloud-automation-platform/
 ├── scripts/
 │   ├── deploy.py            # CLI for build, save, push, and deploy
 │   ├── scale.py             # ECS auto-scaling based on CloudWatch metrics
+│   ├── health_check.py      # Health checks for API, ECS tasks, and CW metrics
 │   └── errors.py            # AWS error formatting utilities
 ├── infra/
 │   └── main.tf              # Terraform infrastructure (ECR, ECS, VPC, IAM)
@@ -74,6 +76,16 @@ terraform apply
 ```
 
 Creates: ECR repository, ECS cluster, Fargate service/task, VPC, private subnets, and security groups.
+
+## Health Checks
+
+Run health checks against the deployed service:
+
+```bash
+python scripts/health_check.py run --endpoint http://<your-service-url>
+```
+
+Checks API endpoints, ECS running task count, and CloudWatch CPU/memory metrics.
 
 ## Requirements
 
