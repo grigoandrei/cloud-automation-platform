@@ -8,23 +8,23 @@ A lightweight cloud automation toolkit for deploying and managing containerized 
 - **Deploy CLI** — builds, saves, and pushes container images to AWS ECR using Podman or Docker
 - **Scaling script** — monitors ECS tasks via CloudWatch metrics and scales based on CPU/memory utilization
 - **Health checks** — validates API endpoints, ECS task status, and CloudWatch metrics
-- **Infrastructure as Code** — Terraform config for ECR, ECS Fargate, VPC, subnets, and security groups
+- **Infrastructure as Code** — Terraform config for ECR, ECS Fargate, VPC, private subnets, security groups, and VPC endpoints
 
 ## Project structure
 
 ```
 cloud-automation-platform/
 ├── app/
-│   └── api.py              # FastAPI app with /health and /data endpoints
+│   └── api.py               # FastAPI app with /health and /data endpoints
 ├── docker/
-│   └── Dockerfile           # Container image definition
+│   └── Dockerfile            # Container image definition
 ├── scripts/
-│   ├── deploy.py            # CLI for build, save, push, and deploy
-│   ├── scale.py             # ECS auto-scaling based on CloudWatch metrics
-│   ├── health_check.py      # Health checks for API, ECS tasks, and CW metrics
-│   └── errors.py            # AWS error formatting utilities
+│   ├── deploy.py             # CLI for build, save, push, and deploy
+│   ├── scale.py              # ECS auto-scaling based on CloudWatch metrics
+│   ├── health_check.py       # Health checks for API, ECS tasks, and CW metrics
+│   └── errors.py             # AWS error formatting utilities
 ├── infra/
-│   └── main.tf              # Terraform infrastructure (ECR, ECS, VPC, IAM)
+│   └── main.tf               # Terraform infrastructure
 ├── requirements.txt
 └── README.md
 ```
@@ -65,6 +65,30 @@ python scripts/deploy.py deploy --dry-run
 python scripts/deploy.py push --ecr-repo my-ecr-repo --region eusc-de-east-1
 ```
 
+## Scaling
+
+Monitor CloudWatch metrics and auto-scale ECS tasks:
+
+```bash
+python scripts/scale.py run --cluster cloud-automation-cluster --service cloud-automation-service
+```
+
+Options: `--cpu-up`, `--cpu-down`, `--min-tasks`, `--max-tasks`, `--interval`, `--cooldown`, `--dry-run`.
+
+## Health Checks
+
+Run health checks against the deployed service:
+
+```bash
+python scripts/health_check.py run --endpoint http://<your-service-url>
+```
+
+Checks:
+- `/health` and `/data` API endpoints
+- ECS running vs desired task count
+- Recent task failures
+- CloudWatch CPU and memory metrics
+
 ## Infrastructure
 
 Provision AWS resources with Terraform:
@@ -75,17 +99,14 @@ terraform init
 terraform apply
 ```
 
-Creates: ECR repository, ECS cluster, Fargate service/task, VPC, private subnets, and security groups.
-
-## Health Checks
-
-Run health checks against the deployed service:
-
-```bash
-python scripts/health_check.py run --endpoint http://<your-service-url>
-```
-
-Checks API endpoints, ECS running task count, and CloudWatch CPU/memory metrics.
+Creates:
+- ECR repository
+- ECS cluster, Fargate service, and task definition
+- VPC with private subnets and route table
+- Security groups for ECS tasks and VPC endpoints
+- VPC endpoints for ECR, S3, and CloudWatch Logs
+- IAM execution role
+- CloudWatch log group
 
 ## Requirements
 
